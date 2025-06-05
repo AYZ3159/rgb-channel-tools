@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xml:lang="en" xmlns= "http://www.w3.org/1999/xhtml">
-<meta charset="UTF-8">
-<meta name="google" content="notranslate">
-<meta http-equiv="Content-Language" content="en">
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<meta charset="UTF-8" />
+<meta name="google" content="notranslate" />
+<meta http-equiv="Content-Language" content="en" />
 <head>
     <title>RGB Channel Tools</title>
     <style>
@@ -19,8 +19,8 @@
             padding: 5px 5px;
             border-bottom: 1px solid #ccc;
         }
-		
-		#drop-area text {
+
+        #drop-area text {
             display: block;
             text-align: center;
         }
@@ -36,7 +36,7 @@
             justify-content: center;
             gap: 20px;
             margin: 20px 0;
-			text-align: center;
+            text-align: center;
         }
 
         .drop-area {
@@ -65,9 +65,9 @@
             margin: 5px;
             font-size: 16px;
             cursor: pointer;
-			color: #fff;
-			background-color: #0052a9;
-			border-color: 4px Solid #255885;
+            color: #fff;
+            background-color: #0052a9;
+            border-color: 4px Solid #255885;
         }
 
         canvas {
@@ -76,44 +76,79 @@
             max-width: 100%; /* Limit the preview width */
             height: auto; /* Maintain aspect ratio */
         }
+
+        /* Modal styles */
+        #dimensionModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #dimensionModalContent {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            text-align: left;
+        }
+        #dimensionModalContent h2 {
+            margin-top: 0;
+        }
+        #dimensionOptions {
+            margin: 15px 0;
+        }
+        .dimensionOption {
+            display: block;
+            margin-bottom: 8px;
+        }
+        #dimensionModal button {
+            margin-top: 10px;
+            float: right;
+        }
     </style>
 </head>
 <body>
     <div id="top-bar">
         <h1 id="title">RGB Channel Tools</h1>
-		<div class="functions">
-			<button id="combineButtonPrompt">Combine Channels</button>
-			<button id="splitButtonPrompt">Split Channels</button>
-		</div>
+        <div class="functions">
+            <button id="combineButtonPrompt">Combine Channels</button>
+            <button id="splitButtonPrompt">Split Channels</button>
+        </div>
     </div>
 
     <div id="combine-section" style="display: none;">
         <div class="container">
             <div class="drop-area" id="redDropArea">
                 <p>Drop RED Channel Here</p><p>- or -</p><p>Click to Upload</p>
-                <input type="file" id="redUpload" accept="image/*" style="display:none;">
+                <input type="file" id="redUpload" accept="image/*" style="display:none;" />
             </div>
             <div class="drop-area" id="greenDropArea">
                 <p>Drop GREEN Channel Here</p><p>- or -</p><p>Click to Upload</p>
-                <input type="file" id="greenUpload" accept="image/*" style="display:none;">
+                <input type="file" id="greenUpload" accept="image/*" style="display:none;" />
             </div>
             <div class="drop-area" id="blueDropArea">
                 <p>Drop BLUE Channel Here</p><p>- or -</p><p>Click to Upload</p>
-                <input type="file" id="blueUpload" accept="image/*" style="display:none;">
+                <input type="file" id="blueUpload" accept="image/*" style="display:none;" />
             </div>
         </div>
-		<div class="container">
-			<button id="combineButton" style="display:none;">Combine Channels</button>
-			<button id="downloadCombined" style="display:none;">Download Combined Image</button>
-		</div>
+        <div class="container">
+            <button id="combineButton" style="display:none;">Combine Channels</button>
+            <button id="downloadCombined" style="display:none;">Download Combined Image</button>
+        </div>
         <canvas id="combineCanvas" style="display:none;"></canvas>
     </div>
-    
+
     <div id="split-section" style="display: none;">
         <div class="container">
             <div class="drop-area" id="fullImageDropArea">
                 <p>Drop image Here</p><p>- or -</p><p>Click to Upload</p>
-                <input type="file" id="fullImageUpload" accept="image/*" style="display:none;">
+                <input type="file" id="fullImageUpload" accept="image/*" style="display:none;" />
             </div>
         </div>
         <div class="container">
@@ -128,10 +163,19 @@
         </div>
     </div>
 
+    <!-- Modal for dimension choice -->
+    <div id="dimensionModal">
+        <div id="dimensionModalContent">
+            <h2>Image dimension mismatch</h2>
+            <p>Choose desired dimensions:</p>
+            <div id="dimensionOptions"></div>
+            <button id="confirmDimensionChoice">Confirm</button>
+        </div>
+    </div>
+
     <script>
         const combineSection = document.getElementById('combine-section');
         const splitSection = document.getElementById('split-section');
-        const functions = document.getElementById('functions');
         const title = document.getElementById('title');
         const combineButtonPrompt = document.getElementById('combineButtonPrompt');
         const splitButtonPrompt = document.getElementById('splitButtonPrompt');
@@ -154,7 +198,12 @@
         };
 
         const images = {};
-		
+
+        // Modal elements
+        const dimensionModal = document.getElementById('dimensionModal');
+        const dimensionOptionsDiv = document.getElementById('dimensionOptions');
+        const confirmDimensionChoiceBtn = document.getElementById('confirmDimensionChoice');
+
         function setupDropArea(dropArea, fileInput, callback) {
             dropArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -183,10 +232,7 @@
                     area.innerHTML = '';
                     area.appendChild(img);
                     images[color] = img;
-                    if (Object.keys(images).length === 3) {
-                        combineImages();
-						
-                    }
+                    combineButton.style.display = Object.keys(images).length === 3 ? 'inline-block' : 'none';
                 };
                 img.src = URL.createObjectURL(file);
             });
@@ -244,29 +290,28 @@
             document.getElementById('downloadRedChannel').style.display = 'block';
             document.getElementById('downloadGreenChannel').style.display = 'block';
             document.getElementById('downloadBlueChannel').style.display = 'block';
-        
-            document.getElementById('downloadRedChannel').addEventListener('click', () => {
+
+            document.getElementById('downloadRedChannel').onclick = () => {
                 const link = document.createElement('a');
                 link.download = 'red-channel.png';
                 link.href = redCanvas.toDataURL();
                 link.click();
-            });
+            };
 
-            document.getElementById('downloadGreenChannel').addEventListener('click', () => {
+            document.getElementById('downloadGreenChannel').onclick = () => {
                 const link = document.createElement('a');
                 link.download = 'green-channel.png';
                 link.href = greenCanvas.toDataURL();
                 link.click();
-            });
+            };
 
-            document.getElementById('downloadBlueChannel').addEventListener('click', () => {
+            document.getElementById('downloadBlueChannel').onclick = () => {
                 const link = document.createElement('a');
                 link.download = 'blue-channel.png';
                 link.href = blueCanvas.toDataURL();
                 link.click();
-            });
-		
-		}
+            };
+        }
 
         handleFileUpload(dropAreas.red, fileInputs.red, 'red');
         handleFileUpload(dropAreas.green, fileInputs.green, 'green');
@@ -284,50 +329,122 @@
             title.textContent = 'Split RGB Channels';
         });
 
-        function combineImages() {
-        const width = Math.max(images.red.naturalWidth,images.green.naturalWidth,images.blue.naturalWidth);
-		const height = Math.max(images.red.naturalHeight,images.green.naturalHeight,images.blue.naturalHeight);
-		
-        combineCanvas.width = width;
-        combineCanvas.height = height;
-
-        const ctx = combineCanvas.getContext('2d');
-
-        const redCtx = document.createElement('canvas').getContext('2d');
-        const greenCtx = document.createElement('canvas').getContext('2d');
-        const blueCtx = document.createElement('canvas').getContext('2d');
-
-        redCtx.canvas.width = greenCtx.canvas.width = blueCtx.canvas.width = width;
-        redCtx.canvas.height = greenCtx.canvas.height = blueCtx.canvas.height = height;
-
-        redCtx.drawImage(images.red, 0, 0);
-        greenCtx.drawImage(images.green, 0, 0);
-        blueCtx.drawImage(images.blue, 0, 0);
-
-        const redData = redCtx.getImageData(0, 0, width, height);
-        const greenData = greenCtx.getImageData(0, 0, width, height);
-        const blueData = blueCtx.getImageData(0, 0, width, height);
-
-        const combinedData = ctx.createImageData(width, height);
-        for (let i = 0; i < redData.data.length; i += 4) {
-            combinedData.data[i] = redData.data[i];
-            combinedData.data[i + 1] = greenData.data[i + 1];
-            combinedData.data[i + 2] = blueData.data[i + 2];
-            combinedData.data[i + 3] = 255;
+        // Utility to get dimensions + channels label for each unique dimension
+        function getDimensionGroups() {
+            // Map string "WxH" => { width, height, channels: [] }
+            const groups = {};
+            for (const [color, img] of Object.entries(images)) {
+                if (!img) continue;
+                const w = img.naturalWidth;
+                const h = img.naturalHeight;
+                const key = `${w}x${h}`;
+                if (!groups[key]) groups[key] = { width: w, height: h, channels: [] };
+                groups[key].channels.push(color.toUpperCase());
+            }
+            return groups;
         }
 
-        ctx.putImageData(combinedData, 0, 0);
-        combineCanvas.style.display = 'block';
-        downloadCombined.style.display = 'block';
-    }
+        function showDimensionModal(groups) {
+            dimensionOptionsDiv.innerHTML = '';
+            for (const [dim, info] of Object.entries(groups)) {
+                // e.g. "512x512 (R/G)"
+                const label = `${dim} (${info.channels.join('/')})`;
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'dimensionOption';
+                radio.value = dim;
+                radio.id = `dimOpt-${dim}`;
+                dimensionOptionsDiv.appendChild(radio);
 
-    downloadCombined.addEventListener('click', () => {
-        const link = document.createElement('a');
-        link.download = 'combined-image.png';
-        link.href = combineCanvas.toDataURL();
-        link.click();
-    });
+                const radioLabel = document.createElement('label');
+                radioLabel.htmlFor = `dimOpt-${dim}`;
+                radioLabel.textContent = label;
+                radioLabel.className = 'dimensionOption';
+                dimensionOptionsDiv.appendChild(radioLabel);
+            }
+            // Default select first
+            const firstRadio = dimensionOptionsDiv.querySelector('input[type=radio]');
+            if (firstRadio) firstRadio.checked = true;
 
-</script>
+            dimensionModal.style.display = 'flex';
+        }
+
+        function scaleImageToDimensions(img, targetWidth, targetHeight) {
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = targetWidth;
+            offCanvas.height = targetHeight;
+            const ctx = offCanvas.getContext('2d');
+			ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, targetWidth, targetHeight);
+            return offCanvas;
+        }
+
+        function combineWithChosenDimensions(chosenDim) {
+            const [targetWidth, targetHeight] = chosenDim.split('x').map(Number);
+
+            combineCanvas.width = targetWidth;
+            combineCanvas.height = targetHeight;
+
+            const ctx = combineCanvas.getContext('2d');
+
+            // Prepare canvases for each channel scaled to target size
+            const redCanvas = scaleImageToDimensions(images.red, targetWidth, targetHeight);
+            const greenCanvas = scaleImageToDimensions(images.green, targetWidth, targetHeight);
+            const blueCanvas = scaleImageToDimensions(images.blue, targetWidth, targetHeight);
+
+            const redCtx = redCanvas.getContext('2d');
+            const greenCtx = greenCanvas.getContext('2d');
+            const blueCtx = blueCanvas.getContext('2d');
+			
+            const redData = redCtx.getImageData(0, 0, targetWidth, targetHeight);
+            const greenData = greenCtx.getImageData(0, 0, targetWidth, targetHeight);
+            const blueData = blueCtx.getImageData(0, 0, targetWidth, targetHeight);
+
+            const combinedData = ctx.createImageData(targetWidth, targetHeight);
+            for (let i = 0; i < redData.data.length; i += 4) {
+                combinedData.data[i] = redData.data[i];       // R
+                combinedData.data[i + 1] = greenData.data[i + 1]; // G
+                combinedData.data[i + 2] = blueData.data[i + 2];  // B
+                combinedData.data[i + 3] = 255;               // alpha
+            }
+
+            ctx.putImageData(combinedData, 0, 0);
+            combineCanvas.style.display = 'block';
+            downloadCombined.style.display = 'inline-block';
+        }
+
+        function combineImages() {
+            // Check if all images are loaded
+            if (!images.red || !images.green || !images.blue) return;
+
+            // Get unique dimension groups
+            const groups = getDimensionGroups();
+            const groupKeys = Object.keys(groups);
+
+            if (groupKeys.length === 1) {
+                // All images same dimensions, combine directly
+                combineWithChosenDimensions(groupKeys[0]);
+            } else {
+                // Show modal for user to pick dimension
+                showDimensionModal(groups);
+            }
+        }
+
+        combineButton.onclick = () => combineImages();
+
+        confirmDimensionChoiceBtn.onclick = () => {
+            const selected = dimensionOptionsDiv.querySelector('input[name="dimensionOption"]:checked');
+            if (!selected) return alert("Please select a dimension option.");
+            dimensionModal.style.display = 'none';
+            combineWithChosenDimensions(selected.value);
+        };
+
+        downloadCombined.onclick = () => {
+            const link = document.createElement('a');
+            link.download = 'combined-image.png';
+            link.href = combineCanvas.toDataURL();
+            link.click();
+        };
+    </script>
 </body>
 </html>
